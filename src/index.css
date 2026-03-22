@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Aged Paper (light) + Inkwell (dark) ───────────────────────────────── */
+
+:root {
+  /* Inkwell — dark default */
+  --bg-base:        #110d08;
+  --bg-surface:     #1c1510;
+  --bg-surface-2:   #261d14;
+  --bg-surface-3:   #312618;
+  --border-color:   rgba(200,160,80,0.15);
+  --text-primary:   #f0e0c0;
+  --text-secondary: #b09060;
+  --text-muted:     #7a6040;
+  --accent:         #c8a050;
+  --accent-dark:    #a07838;
+  --accent-glow:    rgba(200,160,80,0.12);
+  --accent-fg:      #110d08;
+  --shadow-card:    0 4px 24px rgba(0,0,0,0.5);
+  --font-heading:   'Libre Baskerville', Georgia, serif;
+}
+
+[data-theme="light"] {
+  /* Aged Paper — light mode */
+  --bg-base:        #f5f0e8;
+  --bg-surface:     #faf7f0;
+  --bg-surface-2:   #ede8dc;
+  --bg-surface-3:   #e4ddd0;
+  --border-color:   rgba(100,80,40,0.18);
+  --text-primary:   #2c1a0e;
+  --text-secondary: #6b5a3e;
+  --text-muted:     #8b7355;
+  --accent:         #8b4513;
+  --accent-dark:    #6b3010;
+  --accent-glow:    rgba(139,69,19,0.1);
+  --accent-fg:      #faf7f0;
+  --shadow-card:    0 4px 16px rgba(100,80,40,0.1);
+  --font-heading:   'Libre Baskerville', Georgia, serif;
+}
+
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg-surface); }
+  ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+}
+
+@layer components {
+  .card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-card);
+  }
+  .card-header {
+    @apply flex items-center justify-between px-4 py-3;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .card-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    letter-spacing: 0.03em;
+  }
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .btn-primary {
+    @apply font-body font-semibold text-sm px-4 py-2 rounded-lg transition-all duration-150 active:scale-95;
+    background-color: var(--accent);
+    color: var(--accent-fg);
+    font-family: var(--font-heading);
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost {
+    @apply px-3 py-2 rounded-lg transition-all duration-150 text-sm;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-ghost:hover { color: var(--accent); background: var(--accent-glow); }
+  .input-field {
+    @apply rounded-lg px-3 py-2 text-sm transition-all duration-150 w-full outline-none;
+    background-color: var(--bg-surface-2);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .input-field::placeholder { color: var(--text-muted); }
+  .input-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .teal-dot {
+    @apply w-1.5 h-1.5 rounded-full animate-pulse-dot;
+    background-color: var(--accent);
+  }
+  .bg-card  { background-color: var(--bg-surface); }
+  .bg-card2 { background-color: var(--bg-surface-2); }
+  .surface-text  { color: var(--text-primary); }
+  .muted-text    { color: var(--text-muted); }
+  .secondary-text{ color: var(--text-secondary); }
+  .accent-text   { color: var(--accent); }
+  .border-theme  { border-color: var(--border-color); }
+}
+
+/* Recharts dark-theme overrides */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border-color) !important;
+}
+.recharts-text {
+  fill: var(--text-muted) !important;
+  font-family: 'DM Mono', monospace !important;
+  font-size: 11px !important;
+}
+.recharts-tooltip-wrapper { outline: none !important; }
+.recharts-default-tooltip {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  border-radius: 8px !important;
+  font-family: 'DM Mono', monospace !important;
+}
+.recharts-tooltip-label { color: var(--accent) !important; font-size: 12px !important; }
+.recharts-tooltip-item  { color: var(--text-primary) !important; font-size: 12px !important; }
