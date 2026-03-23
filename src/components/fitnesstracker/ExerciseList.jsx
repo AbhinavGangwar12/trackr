@@ -12,11 +12,12 @@ const CATEGORIES = ['Push','Pull','Legs','Core','Cardio','Full Body','Other'];
 function LogRow({ log, userExerciseId }) {
   const dispatch = useDispatch();
   const [editing, setEditing] = useState(false);
+  const [sets,    setSets]    = useState(log.sets ?? 1);
   const [reps,    setReps]    = useState(log.reps ?? '');
   const [weight,  setWeight]  = useState(log.weight ?? '');
 
   const saveEdit = () => {
-    dispatch(editLog({ logId: log.log_id, userExerciseId, data: { reps: Number(reps), weight: Number(weight) } }));
+    dispatch(editLog({ logId: log.log_id, userExerciseId, data: { sets: Number(sets), reps: Number(reps), weight: Number(weight) } }));
     setEditing(false);
   };
 
@@ -28,9 +29,12 @@ function LogRow({ log, userExerciseId }) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg animate-slide-up"
         style={{ backgroundColor: 'var(--bg-surface-2)' }}>
+        <input type="number" value={sets} onChange={(e) => setSets(e.target.value)}
+          className="input-field w-12 text-xs text-center px-2 py-1" placeholder="Sets" />
+        <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>×</span>
         <input type="number" value={reps} onChange={(e) => setReps(e.target.value)}
           className="input-field w-16 text-xs text-center px-2 py-1" placeholder="Reps" />
-        <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>×</span>
+        <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>@</span>
         <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)}
           className="input-field w-20 text-xs text-center px-2 py-1" placeholder="kg" />
         <button onClick={saveEdit} className="font-mono text-xs px-2 py-1 rounded"
@@ -45,11 +49,11 @@ function LogRow({ log, userExerciseId }) {
     <div className="group flex items-center justify-between px-3 py-1.5 rounded-lg transition-all hover:bg-white/5">
       <div className="flex items-center gap-3">
         <span className="font-mono text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-          {log.reps ?? '—'} <span style={{ color: 'var(--text-muted)' }}>×</span> {log.weight ?? '—'}kg
+          {log.sets ?? 1}s <span style={{ color: 'var(--text-muted)' }}>×</span> {log.reps ?? '—'} <span style={{ color: 'var(--text-muted)' }}>@</span> {log.weight ?? '—'}kg
         </span>
         {log.reps && log.weight && (
           <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-            {(log.reps * log.weight).toFixed(0)}kg vol
+            {((log.sets ?? 1) * log.reps * log.weight).toFixed(0)}kg vol
           </span>
         )}
       </div>
