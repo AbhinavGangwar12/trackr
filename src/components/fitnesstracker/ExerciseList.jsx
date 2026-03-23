@@ -227,18 +227,15 @@ function LogSetForm({ userExerciseId, onDone }) {
   const handleSubmit = async () => {
     if (!reps && !weight) return;
     setSubmitting(true);
-    const setCount = Number(sets) || 1;
-    // Fire one log entry per set
-    for (let i = 0; i < setCount; i++) {
-      await dispatch(createLog({
-        userExerciseId,
-        logData: {
-          sets: setCount,
-          reps: Number(reps) || null,
-          weight: Number(weight) || null,
-        },
-      }));
-    }
+    // One single log entry — sets field records how many sets were done
+    await dispatch(createLog({
+      userExerciseId,
+      logData: {
+        sets:   Number(sets)   || 1,
+        reps:   Number(reps)   || null,
+        weight: Number(weight) || null,
+      },
+    }));
     setSets(''); setReps(''); setWeight('');
     setSubmitting(false);
     onDone();
