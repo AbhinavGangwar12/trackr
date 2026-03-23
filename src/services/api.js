@@ -1,7 +1,8 @@
-// In local dev: Vite proxy forwards /api → http://127.0.0.1:8000
-// In production: VITE_API_URL must be set to your Render backend URL
-const BASE_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/v1`
+// Production backend URL — update this if your Render URL changes
+const PROD_URL = 'https://trackr-backend-7n8b.onrender.com';
+
+const BASE_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? `${PROD_URL}/api/v1`
   : '/api/v1';
 
 function getToken() { return localStorage.getItem('trackr_token'); }
