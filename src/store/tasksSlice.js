@@ -4,47 +4,52 @@ import { toast } from '../components/Toast';
 
 // ─── Analytics derivation ────────────────────────────────────────────────────
 
+// Convert any date (local or UTC string) to LOCAL date string YYYY-MM-DD
+function toLocalDateStr(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function deriveAnalytics(completions) {
   const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const todayStr = toLocalDateStr(today);
 
-  // Build count map: { "2026-03-18": 5 }
+  // Build count map using LOCAL dates — critical for IST users
   const countMap = {};
   completions.forEach((c) => {
-    const date = (c.completed_at || '').split('T')[0];
-    if (date) countMap[date] = (countMap[date] || 0) + 1;
+    if (!c.completed_at) return;
+    const date = toLocalDateStr(new Date(c.completed_at)); // convert UTC → local
+    countMap[date] = (countMap[date] || 0) + 1;
   });
 
-  // Heatmap — last 90 days
+  // Heatmap — last 90 days using LOCAL dates
   const activityHeatmap = {};
   for (let i = 90; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().split('T')[0];
+    const key = toLocalDateStr(d);
     activityHeatmap[key] = countMap[key] || 0;
   }
 
-  // Weekly bar — current Mon–Sun
+  // Weekly bar — current Mon–Sun using LOCAL dates
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weeklyData = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day) => {
     const dayIdx = dayNames.indexOf(day);
-    // Find date of this day in the current week
     const diff = dayIdx - today.getDay();
     const d = new Date(today);
     d.setDate(d.getDate() + diff);
-    const key = d.toISOString().split('T')[0];
+    const key = toLocalDateStr(d);
     const completed = countMap[key] || 0;
-    // score: cap at 10 tasks = 100%, scale linearly
     const score = Math.min(Math.round(completed * 12.5), 100);
     return { day, completed, total: Math.max(completed, 1), score };
   });
 
-  // Productivity trend — last 8 days
+  // Productivity trend — last 8 days using LOCAL dates
   const productivityTrend = [];
   for (let i = 7; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().split('T')[0];
+    const key = toLocalDateStr(d);
     const label = d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
     const count = countMap[key] || 0;
     productivityTrend.push({ date: label, score: Math.min(Math.round(count * 12.5), 100) });
@@ -197,11 +202,10 @@ const tasksSlice = createSlice({
         state.weeklyData = weeklyData;
         state.productivityTrend = productivityTrend;
 
-        // Also rebuild completedIds for today from real data
-        const _d = new Date();
-        const todayStr = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`;
+        // Rebuild completedIds for today — compare using LOCAL dates
+        const todayStr = toLocalDateStr(new Date());
         const todayCompletionTaskIds = action.payload
-          .filter((c) => (c.completed_at || '').startsWith(todayStr))
+          .filter((c) => c.completed_at && toLocalDateStr(new Date(c.completed_at)) === todayStr)
           .map((c) => c.task_id);
         // Merge with localStorage set (user may have toggled since load)
         const merged = new Set([...state.completedIds, ...todayCompletionTaskIds]);
