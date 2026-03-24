@@ -21,9 +21,19 @@ function LogRow({ log, userExerciseId }) {
     setEditing(false);
   };
 
-  const fmt = new Date(log.logged_at).toLocaleDateString('en-IN', {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  const logDate = new Date(log.logged_at);
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  const isSameDay = (a, b) => a.toDateString() === b.toDateString();
+
+  const dayLabel = isSameDay(logDate, today)
+    ? 'Today'
+    : isSameDay(logDate, yesterday)
+    ? 'Yesterday'
+    : logDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+  const timeLabel = logDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const fmt = `${dayLabel}, ${timeLabel}`;
 
   if (editing) {
     return (

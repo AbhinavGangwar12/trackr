@@ -1,14 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const dummyResponses = [
-  "Analyzing your training data... Based on your recent volume trends, you're on track for progressive overload. 💪",
-  "I see your squat went up to 100kg! That's solid. Make sure you're hitting depth consistently before adding more weight.",
-  "Your task completion rate dropped on Thursday. Consider batching easier tasks earlier in the day to build momentum.",
-  "For your JWT implementation — make sure your refresh token rotation is handled correctly on concurrent requests.",
-  "Rest day detected. Active recovery recommended: 20-minute walk or light stretching. Your CNS will thank you.",
-  "Productivity insight: You complete 87% of high-priority tasks but only 55% of low-priority ones. That's actually healthy prioritization.",
-  "Your bench press progression looks strong — 5kg in 4 weeks. If that slows, add a back-off set at 85% intensity.",
-  "Next Puppet phase: after hostname setup, the `/etc/hosts` entries are critical before Puppet Server will resolve agents correctly.",
+  "This feature will be available soon — Abhinav",
 ];
 
 let responseIdx = 0;
@@ -19,7 +12,7 @@ const initialState = {
     {
       id: 1,
       role: 'ai',
-      text: "Hey Abhi 👋 I'm your TRACKR assistant. Ask me about your tasks, workouts, or code. I'm connected to your data.",
+      text: "Hey 👋 AI assistant is coming soon. — Abhinav",
       timestamp: new Date().toISOString(),
     },
   ],
@@ -64,7 +57,7 @@ const chatSlice = createSlice({
         {
           id: 1,
           role: 'ai',
-          text: "Hey Abhi 👋 I'm your TRACKR assistant. Chat cleared. What's on your mind?",
+          text: "Hey 👋 AI assistant is coming soon. — Abhinav",
           timestamp: new Date().toISOString(),
         },
       ];
