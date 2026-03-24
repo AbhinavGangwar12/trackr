@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { saveNote } from '../../store/tasksSlice';
 import api from '../../services/api';
 
-const today = new Date().toISOString().split('T')[0];
+const _td = new Date();
+const today = `${_td.getFullYear()}-${String(_td.getMonth() + 1).padStart(2, '0')}-${String(_td.getDate()).padStart(2, '0')}`;
 const fmtDate = (d) =>
   new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 
@@ -35,7 +36,7 @@ export default function DailyNotes() {
     const dates = [today];
     for (let i = 1; i <= 6; i++) {
       const d = new Date(); d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       if (notes[key]) dates.push(key);
     }
     return [...new Set(dates)].slice(0, 5);

@@ -6,7 +6,7 @@ import { toast } from '../components/Toast';
 
 function deriveAnalytics(completions) {
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   // Build count map: { "2026-03-18": 5 }
   const countMap = {};
@@ -65,7 +65,10 @@ function savePriorityMap(map) {
 
 // ─── Completed set (today only — for optimistic UI toggle) ───────────────────
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 function getCompletedSet() {
   try {
     const parsed = JSON.parse(localStorage.getItem('trackr_completed_today') || '{}');
@@ -195,7 +198,8 @@ const tasksSlice = createSlice({
         state.productivityTrend = productivityTrend;
 
         // Also rebuild completedIds for today from real data
-        const todayStr = new Date().toISOString().split('T')[0];
+        const _d = new Date();
+        const todayStr = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`;
         const todayCompletionTaskIds = action.payload
           .filter((c) => (c.completed_at || '').startsWith(todayStr))
           .map((c) => c.task_id);
