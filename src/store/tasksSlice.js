@@ -10,7 +10,7 @@ function toLocalDateStr(d) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function deriveAnalytics(completions) {
+function deriveAnalytics(completions, tasks = []) {
   const today = new Date();
   const todayStr = toLocalDateStr(today);
 
@@ -33,6 +33,7 @@ function deriveAnalytics(completions) {
 
   // Weekly bar — current Mon–Sun using LOCAL dates
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const totalTaskCount = tasks.length || 1; // actual task count for today
   const weeklyData = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day) => {
     const dayIdx = dayNames.indexOf(day);
     const diff = dayIdx - today.getDay();
@@ -40,8 +41,13 @@ function deriveAnalytics(completions) {
     d.setDate(d.getDate() + diff);
     const key = toLocalDateStr(d);
     const completed = countMap[key] || 0;
-    const score = Math.min(Math.round(completed * 12.5), 100);
-    return { day, completed, total: Math.max(completed, 1), score };
+    const isToday = key === todayStr;
+    // For today: use actual task count; for other days: use completed (best approximation)
+    const total = isToday ? totalTaskCount : Math.max(completed, 1);
+    const score = isToday
+      ? Math.min(Math.round((completed / Math.max(totalTaskCount, 1)) * 100), 100)
+      : Math.min(Math.round(completed * 12.5), 100);
+    return { day, completed, total, score };
   });
 
   // Productivity trend — last 8 days using LOCAL dates
@@ -197,7 +203,7 @@ const tasksSlice = createSlice({
       .addCase(fetchCompletions.pending, (state) => { state.analyticsLoading = true; })
       .addCase(fetchCompletions.fulfilled, (state, action) => {
         state.analyticsLoading = false;
-        const { activityHeatmap, weeklyData, productivityTrend } = deriveAnalytics(action.payload);
+        const { activityHeatmap, weeklyData, productivityTrend } = deriveAnalytics(action.payload, state.tasks);
         state.activityHeatmap = activityHeatmap;
         state.weeklyData = weeklyData;
         state.productivityTrend = productivityTrend;
@@ -216,7 +222,6 @@ const tasksSlice = createSlice({
 
     // Create task
     builder
-      .addCase(createTask.pending, (state) => { state.error = null; })
       .addCase(createTask.fulfilled, (state, action) => {
         state.tasks.push(action.payload);
         state.priorityMap[action.payload.task_id] = action.payload.priority || 'medium';
@@ -226,7 +231,6 @@ const tasksSlice = createSlice({
 
     // Update task
     builder
-      .addCase(updateTask.pending, (state) => { state.error = null; })
       .addCase(updateTask.fulfilled, (state, action) => {
         const idx = state.tasks.findIndex((t) => t.task_id === action.payload.task_id);
         if (idx !== -1) {
@@ -239,7 +243,6 @@ const tasksSlice = createSlice({
 
     // Remove task
     builder
-      .addCase(removeTask.pending, (state) => { state.error = null; })
       .addCase(removeTask.fulfilled, (state, action) => {
         state.tasks = state.tasks.filter((t) => t.task_id !== action.payload);
         delete state.priorityMap[action.payload];
