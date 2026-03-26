@@ -5,6 +5,12 @@ import {
   toggleTask, markTaskComplete, setPriority,
 } from '../../store/tasksSlice';
 
+// Local date string helper — avoids UTC/IST mismatch
+function localDateStr(date) {
+  const d = date ? new Date(date) : new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 const priorityConfig = {
   high:   { label: 'HIGH', color: '#f87171', bg: 'rgba(248,113,113,0.1)',  border: 'rgba(248,113,113,0.25)' },
   medium: { label: 'MED',  color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.25)'  },
@@ -78,6 +84,12 @@ function TaskItem({ task, isCompleted, priority, onToggle, onDelete, onEdit }) {
             {task.description}
           </span>
         )}
+        {/* Carry-forward badge — shown when task is from a previous day */}
+        {task.created_at && localDateStr(task.created_at) !== localDateStr() && (
+          <span className="font-mono text-[9px] mt-0.5 block" style={{ color: 'var(--text-muted)' }}>
+            ↩ from {new Date(task.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
       </div>
 
       {/* Priority badge */}
@@ -136,8 +148,13 @@ export default function TodoList() {
     dispatch(setPriority({ taskId, priority }));
   };
 
-  const completed = tasks.filter((t) => completedIds.includes(t.task_id)).length;
-  const total     = tasks.length;
+  const todayStr    = localDateStr();
+  const visibleForStats = tasks.filter((t) => {
+    const taskDate = t.created_at ? localDateStr(t.created_at) : todayStr;
+    return taskDate === todayStr || !completedIds.includes(t.task_id);
+  });
+  const completed = visibleForStats.filter((t) => completedIds.includes(t.task_id)).length;
+  const total     = visibleForStats.length;
   const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
@@ -245,12 +262,23 @@ export default function TodoList() {
             </div>
           </div>
         ) : (() => {
+          const todayStr = localDateStr();
+          // Option B: show today's tasks + incomplete carried-forward tasks from previous days
+          const visibleTasks = tasks.filter((t) => {
+            const taskDate = t.created_at ? localDateStr(t.created_at) : todayStr;
+            const isToday = taskDate === todayStr;
+            const isIncomplete = !completedIds.includes(t.task_id);
+            return isToday || isIncomplete; // today always show; old tasks only if incomplete
+          });
           const filtered = search.trim()
-            ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
-            : tasks;
+            ? visibleTasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
+            : visibleTasks;
           return filtered.length === 0 ? (
-            <div className="flex items-center justify-center h-20 text-sm font-body" style={{ color: 'var(--text-muted)' }}>
-              No tasks match "{search}"
+            <div className="flex flex-col items-center justify-center h-24 px-4 text-center gap-2">
+              <p className="font-body text-sm font-medium" style={{ color: 'var(--text-primary)' }}>All done for today!</p>
+              <p className="font-body text-xs" style={{ color: 'var(--text-muted)' }}>
+                No pending tasks carried forward. Add new ones with <span className="font-mono" style={{ color: 'var(--accent)' }}>+</span>
+              </p>
             </div>
           ) : filtered.map((task) => (
             <TaskItem key={task.task_id} task={task}
