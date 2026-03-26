@@ -216,6 +216,7 @@ const tasksSlice = createSlice({
 
     // Create task
     builder
+      .addCase(createTask.pending, (state) => { state.error = null; })
       .addCase(createTask.fulfilled, (state, action) => {
         state.tasks.push(action.payload);
         state.priorityMap[action.payload.task_id] = action.payload.priority || 'medium';
@@ -225,6 +226,7 @@ const tasksSlice = createSlice({
 
     // Update task
     builder
+      .addCase(updateTask.pending, (state) => { state.error = null; })
       .addCase(updateTask.fulfilled, (state, action) => {
         const idx = state.tasks.findIndex((t) => t.task_id === action.payload.task_id);
         if (idx !== -1) {
@@ -237,6 +239,7 @@ const tasksSlice = createSlice({
 
     // Remove task
     builder
+      .addCase(removeTask.pending, (state) => { state.error = null; })
       .addCase(removeTask.fulfilled, (state, action) => {
         state.tasks = state.tasks.filter((t) => t.task_id !== action.payload);
         delete state.priorityMap[action.payload];
