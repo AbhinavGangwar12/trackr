@@ -33,7 +33,7 @@ function deriveAnalytics(completions, tasks = []) {
 
   // Weekly bar — current Mon–Sun using LOCAL dates
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const totalTaskCount = tasks.length || 1; // actual task count for today
+  const totalTaskCount = tasks.length || 1;
   const weeklyData = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day) => {
     const dayIdx = dayNames.indexOf(day);
     const diff = dayIdx - today.getDay();
@@ -42,7 +42,6 @@ function deriveAnalytics(completions, tasks = []) {
     const key = toLocalDateStr(d);
     const completed = countMap[key] || 0;
     const isToday = key === todayStr;
-    // For today: use actual task count; for other days: use completed (best approximation)
     const total = isToday ? totalTaskCount : Math.max(completed, 1);
     const score = isToday
       ? Math.min(Math.round((completed / Math.max(totalTaskCount, 1)) * 100), 100)
@@ -140,6 +139,7 @@ const initialState = {
   analyticsLoading: false,
   error: null,
   completedIds: [...getCompletedSet()],
+  allTimeCompletedIds: [], // ALL task_ids ever completed (any day) — used for carry-forward filter
   priorityMap: getPriorityMap(),
   // Analytics — populated from real completions data
   weeklyData: [
@@ -191,10 +191,22 @@ const tasksSlice = createSlice({
         state.tasks = action.payload;
         // Sync priorities: tasks now have priority from DB
         action.payload.forEach((t) => {
-          // DB priority takes precedence; fall back to localStorage
           state.priorityMap[t.task_id] = t.priority || state.priorityMap[t.task_id] || 'medium';
         });
         savePriorityMap(state.priorityMap);
+        // Recalculate today's bar total now that we have the real task count
+        // (fetchCompletions may have fired before tasks loaded)
+        if (state.weeklyData.length > 0) {
+          const todayIdx = new Date().getDay(); // 0=Sun
+          const dayOrder = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          const todayName = dayOrder[todayIdx];
+          const todayBar = state.weeklyData.find(d => d.day === todayName);
+          if (todayBar) {
+            const realTotal = action.payload.length || 1;
+            todayBar.total = realTotal;
+            todayBar.score = Math.min(Math.round((todayBar.completed / realTotal) * 100), 100);
+          }
+        }
       })
       .addCase(fetchTasks.rejected, (state, action) => { state.loading = false; state.error = action.payload; });
 
@@ -208,12 +220,14 @@ const tasksSlice = createSlice({
         state.weeklyData = weeklyData;
         state.productivityTrend = productivityTrend;
 
-        // Rebuild completedIds for today — compare using LOCAL dates
+        // All-time completed task IDs (any day) — used for carry-forward filtering
+        state.allTimeCompletedIds = [...new Set(action.payload.map((c) => c.task_id))];
+
+        // Rebuild completedIds for today only — used for checkbox UI
         const todayStr = toLocalDateStr(new Date());
         const todayCompletionTaskIds = action.payload
           .filter((c) => c.completed_at && toLocalDateStr(new Date(c.completed_at)) === todayStr)
           .map((c) => c.task_id);
-        // Merge with localStorage set (user may have toggled since load)
         const merged = new Set([...state.completedIds, ...todayCompletionTaskIds]);
         state.completedIds = [...merged];
         saveCompletedSet(merged);

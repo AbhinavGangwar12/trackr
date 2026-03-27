@@ -5,6 +5,12 @@ import {
   toggleTask, markTaskComplete, setPriority,
 } from '../../store/tasksSlice';
 
+// Local date string — avoids UTC/IST midnight mismatch
+function localDateStr(d) {
+  const date = d ? new Date(d) : new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 const priorityConfig = {
   high:   { label: 'HIGH', color: '#f87171', bg: 'rgba(248,113,113,0.1)',  border: 'rgba(248,113,113,0.25)' },
   medium: { label: 'MED',  color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.25)'  },
@@ -78,6 +84,12 @@ function TaskItem({ task, isCompleted, priority, onToggle, onDelete, onEdit }) {
             {task.description}
           </span>
         )}
+        {/* Carry-forward badge — shown when task is from a previous day */}
+        {task.created_at && localDateStr(task.created_at) !== localDateStr() && (
+          <span className="font-mono text-[9px] mt-0.5 block" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>
+            ↩ from {new Date(task.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
       </div>
 
       {/* Priority badge */}
@@ -111,7 +123,7 @@ function TaskItem({ task, isCompleted, priority, onToggle, onDelete, onEdit }) {
 
 export default function TodoList() {
   const dispatch = useDispatch();
-  const { tasks, loading, completedIds, priorityMap } = useSelector((s) => s.tasks);
+  const { tasks, loading, completedIds, allTimeCompletedIds, priorityMap } = useSelector((s) => s.tasks);
 
   const [adding,      setAdding]      = useState(false);
   const [newTitle,    setNewTitle]    = useState('');
@@ -136,8 +148,17 @@ export default function TodoList() {
     dispatch(setPriority({ taskId, priority }));
   };
 
-  const completed = tasks.filter((t) => completedIds.includes(t.task_id)).length;
-  const total     = tasks.length;
+  const todayStr = localDateStr();
+  // Visible: today's tasks + incomplete carried-forward tasks
+  const visibleTasks = tasks.filter((t) => {
+    const taskDate = t.created_at ? localDateStr(t.created_at) : todayStr;
+    const isToday = taskDate === todayStr;
+    // Use allTimeCompletedIds to check if task was ever completed on ANY day
+    const everCompleted = allTimeCompletedIds.includes(t.task_id);
+    return isToday || !everCompleted;
+  });
+  const completed = visibleTasks.filter((t) => completedIds.includes(t.task_id)).length;
+  const total     = visibleTasks.length;
   const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
@@ -213,6 +234,12 @@ export default function TodoList() {
         </div>
       )}
 
+      {/* Error */}
+      {error && (
+        <div className="mx-3 mt-2 px-3 py-2 rounded-lg text-xs font-mono"
+          style={{ backgroundColor: 'rgba(248,113,113,0.1)', color: '#f87171' }}>{error}</div>
+      )}
+
       {/* Task list */}
       <div className="flex-1 overflow-y-auto py-1">
         {loading && tasks.length === 0 ? (
@@ -239,14 +266,21 @@ export default function TodoList() {
             </div>
           </div>
         ) : (() => {
-          const filtered = search.trim()
-            ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
-            : tasks;
-          return filtered.length === 0 ? (
+          const visibleFiltered = search.trim()
+            ? visibleTasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
+            : visibleTasks;
+          return visibleFiltered.length === 0 && visibleTasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-24 px-4 text-center gap-2">
+              <p className="font-body text-sm font-medium" style={{ color: 'var(--text-primary)' }}>All done for today!</p>
+              <p className="font-body text-xs" style={{ color: 'var(--text-muted)' }}>
+                No pending tasks. Add new ones with <span className="font-mono" style={{ color: 'var(--accent)' }}>+</span>
+              </p>
+            </div>
+          ) : visibleFiltered.length === 0 ? (
             <div className="flex items-center justify-center h-20 text-sm font-body" style={{ color: 'var(--text-muted)' }}>
               No tasks match "{search}"
             </div>
-          ) : filtered.map((task) => (
+          ) : visibleFiltered.map((task) => (
             <TaskItem key={task.task_id} task={task}
               isCompleted={completedIds.includes(task.task_id)}
               priority={priorityMap[task.task_id] || 'medium'}
@@ -260,10 +294,10 @@ export default function TodoList() {
       {/* Footer */}
       <div className="px-4 py-2.5 border-t flex justify-between" style={{ borderColor: 'var(--border-color)' }}>
         <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-          {tasks.filter((t) => !completedIds.includes(t.task_id)).length} remaining
+          {visibleTasks.filter((t) => !completedIds.includes(t.task_id)).length} remaining
         </span>
         <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-          {tasks.filter((t) => priorityMap[t.task_id] === 'high' && !completedIds.includes(t.task_id)).length} high-pri left
+          {visibleTasks.filter((t) => priorityMap[t.task_id] === 'high' && !completedIds.includes(t.task_id)).length} high-pri left
         </span>
       </div>
     </div>
