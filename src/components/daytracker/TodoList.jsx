@@ -234,12 +234,6 @@ export default function TodoList() {
         </div>
       )}
 
-      {/* Error */}
-      {error && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-lg text-xs font-mono"
-          style={{ backgroundColor: 'rgba(248,113,113,0.1)', color: '#f87171' }}>{error}</div>
-      )}
-
       {/* Task list */}
       <div className="flex-1 overflow-y-auto py-1">
         {loading && tasks.length === 0 ? (
